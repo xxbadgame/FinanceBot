@@ -77,31 +77,44 @@ def on_message(ws, message):
     
                 if df['WILLIAMS_R'].iloc[-1] > -80:
                     startTrade = False
+                    # 40 pour tester 
                     if df['RSI'].iloc[-2] < 30 and \
                     df['MME'].iloc[-2] > AvantDernierClose and \
                     df['BBANDS'].iloc[-2][1] > AvantDernierClose and \
                     df['WILLIAMS_R'].iloc[-2] < -80:
                             startTrade = True
+                            signal = f"Achat : {Time}"
+                            with open("FinanceBot\FinanceBot\Bot\signal.txt", "w") as file:
+                                file.write(signal)
                             print("")
                             print("Achat")
-                            print("Prix de fermeture : ", DernierClose, "RSI: ", RSI, "MME: ", MME, "BBANDS: ", BBANDS, "WILLIAMS: ", df['WILLIAMS_R'][-2], "Time: ", Time)
+                            print("Prix de fermeture : ", DernierClose, "RSI: ", RSI, "MME: ", MME, "BBANDS: ", BBANDS, "WILLIAMS: ", df['WILLIAMS_R'].iloc[-2], "Time: ", Time)
                            
                 ############### Vente ###############      
                 
                 if df['WILLIAMS_R'].iloc[-1] < -20:
                     startTrade = False
+                    # 60 pour tester
                     if df['RSI'].iloc[-2] > 70 and \
                     df['MME'].iloc[-2] < AvantDernierClose and \
                     df['BBANDS'].iloc[-2][0] < AvantDernierClose and \
                     df['WILLIAMS_R'].iloc[-2] > -20:
                             startTrade = True
+                            signal = f"Vente : {Time} "
+                            with open("FinanceBot\FinanceBot\Bot\signal.txt", "w") as file:
+                                file.write(signal)
                             print("")
                             print("Vente")
-                            print("Prix de fermeture : ", DernierClose, "RSI: ", RSI, "MME: ", MME, "BBANDS: ", BBANDS, "WILLIAMS: ", df['WILLIAMS_R'][-2], "Time: ", Time)
+                            print("Prix de fermeture : ", DernierClose, "RSI: ", RSI, "MME: ", MME, "BBANDS: ", BBANDS, "WILLIAMS: ", df['WILLIAMS_R'].iloc[-2], "Time: ", Time)
                     
                 ####################################
             else:
+                df.loc[df.index[-1], 'RSI'] = 0
+                df.loc[df.index[-1], 'MME'] = 0                
+                df.loc[df.index[-1], 'WILLIAMS_R'] = 0
+                df.at[df.index[-1], 'BBANDS'] = (0,0)
                 print(df)
+                
     
          
         # Mise à jour de la dernière minute ajoutée
@@ -113,6 +126,8 @@ def on_message(ws, message):
         df['Low'] = df['Low'].astype(float)
         df['Close'] = df['Close'].astype(float)
         df['Volume'] = df['Volume'].astype(float)
+        
+        print("")
     
 
 def on_error(ws, error):

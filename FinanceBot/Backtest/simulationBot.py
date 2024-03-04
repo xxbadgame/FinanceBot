@@ -43,14 +43,13 @@ def SimulationBot(df):
             MME = Indicateurs().MME(dfSimulation['Close'].tolist())
             BBANDS = Indicateurs().BBANDS(dfSimulation['Close'].tolist())
             WILLIAM_R = Indicateurs().WILLIAMS(dfSimulation['High'].tolist(), dfSimulation['Low'].tolist(), dfSimulation['Close'].tolist())
-            
-            print(dfSimulation)
 
             print("RSI: ", RSI)
             print("MME: ", MME)
             print("BBANDS: ", BBANDS)
             print("MedianBands: ", np.median(BBANDS))
             print("WILLIAMS_R: ", WILLIAM_R)
+            print("Time: ", Time)
         
             dfSimulation.loc[dfSimulation.index[-1], 'RSI'] = RSI
             dfSimulation.loc[dfSimulation.index[-1], 'MME'] = MME 
@@ -71,6 +70,9 @@ def SimulationBot(df):
                 dfSimulation['BBANDS'].iloc[-2][1] > AvantDernierClose and \
                 dfSimulation['WILLIAMS_R'].iloc[-2] < -80:
                         startTrade = True
+                        signal = f"Achat : {Time} "
+                        with open("..\Bot\signal.txt", "w") as file:
+                            file.write(signal)
                         print("")
                         print("Achat")
                         print("Prix de fermeture : ", DernierClose, "RSI: ", RSI, "MME: ", MME, "BBANDS: ", BBANDS, "WILLIAMS: ", dfSimulation['WILLIAMS_R'].iloc[-2], "Time: ", Time)
@@ -84,6 +86,9 @@ def SimulationBot(df):
                 dfSimulation['BBANDS'].iloc[-2][0] < AvantDernierClose and \
                 dfSimulation['WILLIAMS_R'].iloc[-2] > -20:
                         startTrade = True
+                        signal = f"Vente : {Time} "
+                        with open("..\Bot\signal.txt", "w") as file:
+                            file.write(signal)
                         print("")
                         print("Vente")
                         print("Prix de fermeture : ", DernierClose, "RSI: ", RSI, "MME: ", MME, "BBANDS: ", BBANDS, "WILLIAMS: ", dfSimulation['WILLIAMS_R'].iloc[-2], "Time: ", Time)
@@ -92,8 +97,12 @@ def SimulationBot(df):
 
         else:
             print("Pas assez de données pour calculer les indicateurs")
+            dfSimulation.loc[dfSimulation.index[-1], 'RSI'] = 0
+            dfSimulation.loc[dfSimulation.index[-1], 'MME'] = 0 
+            dfSimulation.loc[dfSimulation.index[-1], 'WILLIAMS_R'] = 0
+            dfSimulation.at[dfSimulation.index[-1], 'BBANDS'] = (0,0)
 
-        time.sleep(0.1)
+        time.sleep(0.3)
         # Ajustement pour la conversion des types après l'ajout des données
         dfSimulation['Open'] = dfSimulation['Open'].astype(float)
         dfSimulation['High'] = dfSimulation['High'].astype(float)

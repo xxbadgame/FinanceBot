@@ -45,7 +45,7 @@ for i in range(len(df['Close'])):
                 print("")
                 print("Achat")
                 compteurAchat += 1
-                print("Prix de fermeture : ", df["Close"][i], "RSI: ", ListeRSI[i], "MME: ", ListeMME[i], "BBANDS: ", ListeBBANDS[i], "Mediane BBANDS : ",ListeMedianBands[i], "WILLIAMS: ", ListeWILLIAMS[i], "Time: ", df.index[i])
+                print("Prix de fermeture : ", df["Close"].iloc[i], "RSI: ", ListeRSI[i], "MME: ", ListeMME[i], "BBANDS: ", ListeBBANDS[i], "Mediane BBANDS : ",ListeMedianBands[i], "WILLIAMS: ", ListeWILLIAMS[i], "Time: ", df.index[i])
                 ### combien de temps pour toucher le SMA ###
                 # Vérifie si le breakeven est atteint dans les 10 prochaines minutes
                 breakeven_reached = False
