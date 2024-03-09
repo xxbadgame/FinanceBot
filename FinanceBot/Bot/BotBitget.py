@@ -84,11 +84,18 @@ def on_message(ws, message):
                     df['WILLIAMS_R'].iloc[-2] < -80:
                             startTrade = True
                             signal = f"Achat : {Time}"
-                            with open("FinanceBot\FinanceBot\Bot\signal.txt", "w") as file:
+                            with open("FinanceBot\Bot\signal.txt", "w") as file:
                                 file.write(signal)
                             print("")
                             print("Achat")
                             print("Prix de fermeture : ", DernierClose, "RSI: ", RSI, "MME: ", MME, "BBANDS: ", BBANDS, "WILLIAMS: ", df['WILLIAMS_R'].iloc[-2], "Time: ", Time)
+                       
+            
+                ### Effectuer des actions pendant le trade ###
+                # Si dans les bougies post achat : une bougie atteint tailleBougieEntrer/2 alors stop loss
+                # Si dans les bougies post achat : une bougie atteint clotureAchat + 60 alors breakeven
+                # Si dans les bougies post achat : une bougie atteint la médiane des bandes de Bollinger alors nouveau stop loss
+                # Si dans les bougies post achat : une bougie atteint la bande supérieure de Bollinger alors cloture trade
                            
                 ############### Vente ###############      
                 
@@ -101,7 +108,7 @@ def on_message(ws, message):
                     df['WILLIAMS_R'].iloc[-2] > -20:
                             startTrade = True
                             signal = f"Vente : {Time} "
-                            with open("FinanceBot\FinanceBot\Bot\signal.txt", "w") as file:
+                            with open("FinanceBot\Bot\signal.txt", "w") as file:
                                 file.write(signal)
                             print("")
                             print("Vente")
