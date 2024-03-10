@@ -4,33 +4,76 @@ import pandas as pd
 import datetime
 from Indicateurs import *
 import numpy as np
+import requests
 
 
-df = pd.DataFrame(columns=["Time", "Open", "High", "Low", "Close", "Volume", "WILLIAMS_R", "RSI", "MME", "BBANDS"])
+# Configuration initiale pour la requête API
+url = "https://api.bitget.com/api/v2/mix/market/history-candles"
+params = {
+    "symbol": "BTCUSDT",
+    "granularity": "1m",  
+    "productType": "usdt-futures",
+    "limit": 14,
+}
+
+# Effectuer la requête
+response = requests.get(url, params=params)
+data = response.json().get('data', [])
+
+# Préparer les données pour le DataFrame
+rows = []  # Cette liste va contenir les dictionnaires pour chaque ligne du DataFrame
+
+for candle in data:
+    dicoCandle = {
+        "Time": pd.to_datetime(int(candle[0]), unit='ms'),
+        "Open": float(candle[1]),
+        "High": float(candle[2]),
+        "Low": float(candle[3]),
+        "Close": float(candle[4]),
+        "Volume": float(candle[5]),
+        "WILLIAMS_R": 0.0,
+        "RSI": 0.0,
+        "MME": 0.0,
+        "BBANDS": (0.0, 0.0)  # En supposant que BBANDS est un tuple de deux zéros
+    }
+    rows.append(dicoCandle)
+
+# Créer le DataFrame directement à partir de la liste des dictionnaires
+df = pd.DataFrame(rows)
+
+print(df)
+
+
 DataFive = []
-startTrade = False
-breakeven_reached = False
-
-# Variable pour suivre la dernière minute ajoutée à df
+startTradeAchat = False
+startTradeVente = False
+breakeven = False
+newStopLoss = False
+bougieEntree = None
 last_added_minute = None
 
 def on_message(ws, message):
-    global df, DataFive, last_added_minute, startTrade, breakeven_reached
+    global df, DataFive, last_added_minute, startTradeAchat, startTradeVente, breakeven, newStopLoss, bougieEntree
     data = json.loads(message)
     if data.get("action") == "update":
         candle_data = data.get("data")[0]
 
         timestamp_ms = int(candle_data[0])
         Time = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000).strftime('%Y-%m-%d %H:%M:%S')
-        Open, High, Low, Close, Volume = candle_data[1:6]
+        Open, High, Low, Close, Volume = map(float, candle_data[1:6])
 
-        DataFive.append([Time, Open, High, Low, Close, Volume])
+        DataFive.append([Time,Open, High, Low, Close, Volume])
 
         # Garder seulement les deux dernières entrées pour comparaison
         DataFive = DataFive[-2:]
+        try:
+            BougieActuelle = DataFive[1]
+        except:
+            pass
+        
         
         try :
-            print(DataFive[1])
+            print(BougieActuelle)
         except:
             pass
 
@@ -54,8 +97,6 @@ def on_message(ws, message):
                 MME = Indicateurs().MME(df['Close'].tolist())
                 BBANDS = Indicateurs().BBANDS(df['Close'].tolist())
                 WILLIAM_R = Indicateurs().WILLIAMS(df['High'].tolist(), df['Low'].tolist(), df['Close'].tolist())
-            
-                print(df)
                 
                 print("RSI: ", RSI)
                 print("MME: ", MME)
@@ -67,52 +108,116 @@ def on_message(ws, message):
                 df.loc[df.index[-1], 'MME'] = MME 
                 df.loc[df.index[-1], 'WILLIAMS_R'] = WILLIAM_R
                 df.at[df.index[-1], 'BBANDS'] = BBANDS
-                    
-                DernierClose = df['Close'].iloc[-1]
-                AvantDernierClose = df['Close'].iloc[-2]
+                
+                print(df)    
+                
+                PointEntree = df['Close'].iloc[-1]
+                AvantPointEntree = df['Close'].iloc[-2]
                 MedianBands = np.median(BBANDS)
             
             
                 ############### Achat ###############  
+                
+                #df['BBANDS'].iloc[-2][1] > AvantPointEntree and \ df['MME'].iloc[-2] > AvantPointEntree and \ if df['RSI'].iloc[-2] < 40 and \
     
-                if df['WILLIAMS_R'].iloc[-1] > -80:
-                    startTrade = False
-                    # 40 pour tester 
-                    if df['RSI'].iloc[-2] < 30 and \
-                    df['MME'].iloc[-2] > AvantDernierClose and \
-                    df['BBANDS'].iloc[-2][1] > AvantDernierClose and \
-                    df['WILLIAMS_R'].iloc[-2] < -80:
-                            startTrade = True
+                if df['WILLIAMS_R'].iloc[-1] > -80 and startTradeAchat == False:
+                    if df['WILLIAMS_R'].iloc[-2] < -80:
+                            startTradeAchat = True
                             signal = f"Achat : {Time}"
                             with open("FinanceBot\Bot\signal.txt", "w") as file:
                                 file.write(signal)
                             print("")
                             print("Achat")
-                            print("Prix de fermeture : ", DernierClose, "RSI: ", RSI, "MME: ", MME, "BBANDS: ", BBANDS, "WILLIAMS: ", df['WILLIAMS_R'].iloc[-2], "Time: ", Time)
+                            print("RSI: ", RSI, "MME: ", MME, "BBANDS: ", BBANDS, "WILLIAMS: ", df['WILLIAMS_R'].iloc[-2], "Time: ", Time)
                        
-            
-                ### Effectuer des actions pendant le trade ###
-                # Si dans les bougies post achat : une bougie atteint tailleBougieEntrer/2 alors stop loss
-                # Si dans les bougies post achat : une bougie atteint clotureAchat + 60 alors breakeven
-                # Si dans les bougies post achat : une bougie atteint la médiane des bandes de Bollinger alors nouveau stop loss
-                # Si dans les bougies post achat : une bougie atteint la bande supérieure de Bollinger alors cloture trade
+                            bougieEntree = BougieActuelle
+                            TailleBougieEntree = Open - Close
+                            PointEntree = Close
+
+                                
+                    """ # Stop Loss primaire
+                    if PointEntree-TailleBougieEntree/2 > PointEntree-Low and breakeven == False:
+                        print(f"Stop Loss, -{PointEntree - TailleBougieEntree/2}€")
+                        startTrade = False
+                    
+                    # Logique Breakeven, Trade Gratuit
+                    elif High > PointEntree + 60 and newStopLoss == False:
+                        print("Breakeven")
+                        breakeven = True
+                    elif Close > PointEntree + 60 and breakeven and newStopLoss == False:
+                        print("Entre breakeven et newStopLoss, attendre...")
+                    elif Close < PointEntree + 60 and breakeven and newStopLoss == False:
+                        print("Retour breakeven, +0€")
+                        startTrade = False
+                        
+                    # Logique New Stop Loss, Trade partiel mais gaganant
+                    elif High > MedianBands and breakeven and newStopLoss == False:
+                        print("Nouveau Stop Loss")
+                        newStopLoss = True
+                    elif Close > MedianBands and breakeven and newStopLoss:
+                        print("Entre newStopLoss et Cloture Trade complet, attendre...")
+                    elif Close < MedianBands and newStopLoss:
+                        print(f"Retour New Stop Loss, +{PointEntree - MedianBands}€")
+                        startTrade = False
+                        
+                    # Logique Cloture Trade complet
+                    elif Close > BBANDS[1] and newStopLoss:
+                        print(f"Cloture Trade complet +{PointEntree - BBANDS[1]}€")
+                        startTrade = False
+
+                    # Trade en cours
+                    else:
+                        print("En cours...") """
                            
                 ############### Vente ###############      
                 
-                if df['WILLIAMS_R'].iloc[-1] < -20:
-                    startTrade = False
-                    # 60 pour tester
-                    if df['RSI'].iloc[-2] > 70 and \
-                    df['MME'].iloc[-2] < AvantDernierClose and \
-                    df['BBANDS'].iloc[-2][0] < AvantDernierClose and \
-                    df['WILLIAMS_R'].iloc[-2] > -20:
-                            startTrade = True
+                #df['MME'].iloc[-2] < AvantPointEntree and \ df['BBANDS'].iloc[-2][0] < AvantPointEntree and \ if df['RSI'].iloc[-2] > 60 and \
+                
+                if df['WILLIAMS_R'].iloc[-1] < -20 and startTradeVente == False:
+                    if df['WILLIAMS_R'].iloc[-2] > -20:
+                            startTradeVente = True
                             signal = f"Vente : {Time} "
                             with open("FinanceBot\Bot\signal.txt", "w") as file:
                                 file.write(signal)
                             print("")
                             print("Vente")
-                            print("Prix de fermeture : ", DernierClose, "RSI: ", RSI, "MME: ", MME, "BBANDS: ", BBANDS, "WILLIAMS: ", df['WILLIAMS_R'].iloc[-2], "Time: ", Time)
+                            print("Prix de fermeture : ", PointEntree, "RSI: ", RSI, "MME: ", MME, "BBANDS: ", BBANDS, "WILLIAMS: ", df['WILLIAMS_R'].iloc[-2], "Time: ", Time)
+                    
+                        
+                    """ # Stop Loss primaire
+                    if PointEntree+TailleBougieEntree/2 < PointEntree-High and breakeven == False:
+                        print(f"Stop Loss, -{PointEntree + TailleBougieEntree/2}€")
+                        startTrade = False
+                    
+                    # Logique Breakeven, Trade Gratuit
+                    elif Low < PointEntree - 60 and newStopLoss == False:
+                        print("Breakeven")
+                        breakeven = True
+                    elif Close < PointEntree - 60 and breakeven and newStopLoss == False:
+                        print("Entre breakeven et newStopLoss, attendre...")
+                    elif Close > PointEntree - 60 and breakeven and newStopLoss == False:
+                        print("Retour breakeven, +0€")
+                        startTrade = False
+                        
+                    # Logique New Stop Loss, Trade partiel mais gaganant
+                    elif Low < MedianBands and breakeven and newStopLoss == False:
+                        print("Nouveau Stop Loss")
+                        newStopLoss = True
+                    elif Close < MedianBands and breakeven and newStopLoss:
+                        print("Entre newStopLoss et Cloture Trade complet, attendre...")
+                    elif Close > MedianBands and newStopLoss:
+                        print(f"Retour New Stop Loss, +{MedianBands - PointEntree}€")
+                        startTrade = False
+                        
+                    # Logique Cloture Trade complet
+                    elif Close < BBANDS[0] and newStopLoss:
+                        print(f"Cloture Trade complet +{BBANDS[0] - PointEntree}€")
+                        startTrade = False 
+
+                    # Trade en cours
+                    else:
+                        print("En cours...")
+                    """
                     
                 ####################################
             else:
@@ -121,6 +226,22 @@ def on_message(ws, message):
                 df.loc[df.index[-1], 'WILLIAMS_R'] = 0
                 df.at[df.index[-1], 'BBANDS'] = (0,0)
                 print(df)
+        
+        if len(df) > 16:
+            if startTradeAchat :
+                        if Close > Open + 30:
+                            print("Trade fini")
+                            startTradeAchat = False
+                        else:
+                            print("Trade en cours...")          
+                            
+            if startTradeVente :
+                        if Close < Open - 30:
+                            print("Trade fini")
+                            startTradeVente = False
+                        else:
+                            print("Trade en cours...")     
+        
                 
     
          
@@ -139,6 +260,9 @@ def on_message(ws, message):
 
 def on_error(ws, error):
     print(error)
+    # if isinstance(error, Exception):
+    #     import traceback
+    #     traceback.print_exc()
 
 def on_close(ws, close_status_code, close_msg):
     print("### closed ###")
