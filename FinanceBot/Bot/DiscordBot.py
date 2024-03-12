@@ -1,10 +1,11 @@
 import discord
 from discord.ext import commands, tasks
-from BotBitget import *
+
 import os
 
 intents = discord.Intents.all()  # Active les intents par défaut
 bot = commands.Bot(command_prefix='!',description ='Voici mon bot de trading', intents=intents)
+
 
     
 @bot.command()
@@ -31,7 +32,7 @@ async def check_signal():
         signal = file.read().strip()
     channel = bot.get_channel(channel_id)
     if signal:
-        await channel.send(f"Signal de trading: {signal}")
+        await channel.send(f"{signal}")
     with open("FinanceBot/Bot/signal.txt", "w") as file:
         file.write("")
 
@@ -41,7 +42,5 @@ async def on_ready():
     check_signal.start()
 
 
-
-
-    
-bot.run('ODQyNDgyNTgyMTMwMjYyMDM2.GKCHpQ.34PCc7P7k8FViF71PQScp3wIspvwRnFuG3PXWA')
+if __name__ == "__main__":
+    bot.run('ODQyNDgyNTgyMTMwMjYyMDM2.GKCHpQ.34PCc7P7k8FViF71PQScp3wIspvwRnFuG3PXWA')
