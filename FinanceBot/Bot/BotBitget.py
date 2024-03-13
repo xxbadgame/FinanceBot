@@ -11,7 +11,7 @@ import requests
 url = "https://api.bitget.com/api/v2/mix/market/history-candles"
 params = {
     "symbol": "BTCUSDT",
-    "granularity": "15m",  
+    "granularity": "1m",  
     "productType": "usdt-futures",
     "limit": 14,
 }
@@ -151,7 +151,6 @@ def on_message(ws, message):
                         print("Vente")
                         print("Prix de fermeture : ", PointEntree, "RSI: ", RSI, "MME: ", MME, "BBANDS: ", BBANDS, "WILLIAMS: ", df['WILLIAMS_R'].iloc[-2], "Time: ", Time)
                         print("")
-                               
                         
                         
                     ########################################
@@ -302,7 +301,7 @@ def on_open(ws):
         "args": [
             {
                 "instType": "USDT-FUTURES",
-                "channel": "candle15m",
+                "channel": "candle1m",
                 "instId": "BTCUSDT"
             }
         ]
