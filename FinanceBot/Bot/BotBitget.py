@@ -11,7 +11,7 @@ import requests
 url = "https://api.bitget.com/api/v2/mix/market/history-candles"
 params = {
     "symbol": "BTCUSDT",
-    "granularity": "1m",  
+    "granularity": "15m",  
     "productType": "usdt-futures",
     "limit": 14,
 }
@@ -302,7 +302,7 @@ def on_open(ws):
         "args": [
             {
                 "instType": "USDT-FUTURES",
-                "channel": "candle1m",
+                "channel": "candle15m",
                 "instId": "BTCUSDT"
             }
         ]
