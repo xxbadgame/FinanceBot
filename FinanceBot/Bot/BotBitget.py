@@ -120,8 +120,7 @@ def on_message(ws, message):
                     startTradeAchat == False and \
                     df['BBANDS'].iloc[-2][1] > AvantPointEntree and \
                     df['MME'].iloc[-2] > AvantPointEntree and \
-                    df['RSI'].iloc[-2] < 30 and \
-                    df['RSI'].iloc[-1] > 30 :
+                    df['RSI'].iloc[-2] < 30 :
                             
                         with open("FinanceBot\Bot\signal.txt", "w") as file:
                             file.write(f"Achat : {Time}")
@@ -141,8 +140,7 @@ def on_message(ws, message):
                     startTradeVente == False and \
                     df['BBANDS'].iloc[-2][0] < AvantPointEntree and \
                     df['MME'].iloc[-2] < AvantPointEntree and \
-                    df['RSI'].iloc[-2] > 70 and \
-                    df['RSI'].iloc[-1] < 70 :
+                    df['RSI'].iloc[-2] > 70 :
                         
                         startTradeVente = True
                         
