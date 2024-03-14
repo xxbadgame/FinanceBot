@@ -69,10 +69,10 @@ def SimulationBot(df):
                 dfSimulation['MME'].iloc[-2] > AvantDernierClose and \
                 dfSimulation['BBANDS'].iloc[-2][1] > AvantDernierClose and \
                 dfSimulation['WILLIAMS_R'].iloc[-2] < -80:
-                        startTrade = True
-                        signal = f"Achat : {Time} "
-                        with open("..\Bot\signal.txt", "w") as file:
-                            file.write(signal)
+                        # startTrade = True
+                        # signal = f"Achat : {Time} "
+                        # with open("..\Bot\signal.txt", "w") as file:
+                        #     file.write(signal)
                         print("")
                         print("Achat")
                         print("Prix de fermeture : ", DernierClose, "RSI: ", RSI, "MME: ", MME, "BBANDS: ", BBANDS, "WILLIAMS: ", dfSimulation['WILLIAMS_R'].iloc[-2], "Time: ", Time)
@@ -85,10 +85,10 @@ def SimulationBot(df):
                 dfSimulation['MME'].iloc[-2] < AvantDernierClose and \
                 dfSimulation['BBANDS'].iloc[-2][0] < AvantDernierClose and \
                 dfSimulation['WILLIAMS_R'].iloc[-2] > -20:
-                        startTrade = True
-                        signal = f"Vente : {Time} "
-                        with open("..\Bot\signal.txt", "w") as file:
-                            file.write(signal)
+                    #     startTrade = True
+                    #    # signal = f"Vente : {Time} "
+                    #     #with open("..\Bot\signal.txt", "w") as file:
+                    #         file.write(signal)
                         print("")
                         print("Vente")
                         print("Prix de fermeture : ", DernierClose, "RSI: ", RSI, "MME: ", MME, "BBANDS: ", BBANDS, "WILLIAMS: ", dfSimulation['WILLIAMS_R'].iloc[-2], "Time: ", Time)
@@ -102,7 +102,7 @@ def SimulationBot(df):
             dfSimulation.loc[dfSimulation.index[-1], 'WILLIAMS_R'] = 0
             dfSimulation.at[dfSimulation.index[-1], 'BBANDS'] = (0,0)
 
-        time.sleep(0.3)
+        time.sleep(0)
         # Ajustement pour la conversion des types après l'ajout des données
         dfSimulation['Open'] = dfSimulation['Open'].astype(float)
         dfSimulation['High'] = dfSimulation['High'].astype(float)

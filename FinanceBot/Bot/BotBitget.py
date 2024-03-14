@@ -11,7 +11,7 @@ import requests
 url = "https://api.bitget.com/api/v2/mix/market/history-candles"
 params = {
     "symbol": "BTCUSDT",
-    "granularity": "1m",  
+    "granularity": "15m",  
     "productType": "usdt-futures",
     "limit": 14,
 }
@@ -49,11 +49,12 @@ startTradeAchat = False
 startTradeVente = False
 breakeven = False
 newStopLoss = False
-bougieEntree = None
+TailleBougieEntree = None
+PointEntree = None
 last_added_minute = None
 
 def on_message(ws, message):
-    global df, DataFive, last_added_minute, startTradeAchat, startTradeVente, breakeven, newStopLoss, bougieEntree
+    global df, DataFive, last_added_minute, startTradeAchat, startTradeVente, breakeven, newStopLoss, TailleBougieEntree, PointEntree
     data = json.loads(message)
     if data.get("action") == "update":
         candle_data = data.get("data")[0]
@@ -107,7 +108,6 @@ def on_message(ws, message):
                 
                 print(df)    
                 
-                PointEntree = df['Close'].iloc[-1]
                 AvantPointEntree = df['Close'].iloc[-2]
                 MedianBands = np.median(BBANDS)
             
@@ -117,10 +117,12 @@ def on_message(ws, message):
         
                     if df['WILLIAMS_R'].iloc[-1] > -80 and \
                     df['WILLIAMS_R'].iloc[-2] < -80 and \
-                    startTradeAchat == False and \
                     df['BBANDS'].iloc[-2][1] > AvantPointEntree and \
-                    df['MME'].iloc[-2] > AvantPointEntree and \
                     df['RSI'].iloc[-2] < 30 :
+                    
+                    #if df['WILLIAMS_R'].iloc[-1] > -80 and df['WILLIAMS_R'].iloc[-2] < -80:
+                            
+                        startTradeAchat = True
                             
                         with open("FinanceBot\Bot\signal.txt", "w") as file:
                             file.write(f"Achat : {Time}")
@@ -129,6 +131,8 @@ def on_message(ws, message):
                         print("Achat")
                         print("RSI: ", RSI, "MME: ", MME, "BBANDS: ", BBANDS, "WILLIAMS: ", df['WILLIAMS_R'].iloc[-2], "Time: ", Time)
                         print("")
+                        TailleBougieEntree = abs(df['Close'].iloc[-1] - df['Open'].iloc[-1])
+                        PointEntree = df['Close'].iloc[-1]
                         
                             
                     ############### Vente ###############      
@@ -137,11 +141,11 @@ def on_message(ws, message):
                     
                     if df['WILLIAMS_R'].iloc[-1] < -20 and \
                     df['WILLIAMS_R'].iloc[-2] > -20 and \
-                    startTradeVente == False and \
                     df['BBANDS'].iloc[-2][0] < AvantPointEntree and \
-                    df['MME'].iloc[-2] < AvantPointEntree and \
                     df['RSI'].iloc[-2] > 70 :
-                        
+                    
+                    #if df['WILLIAMS_R'].iloc[-1] < -20 and df['WILLIAMS_R'].iloc[-2] > -20:    
+                    
                         startTradeVente = True
                         
                         with open("FinanceBot\Bot\signal.txt", "w") as file:
@@ -151,6 +155,8 @@ def on_message(ws, message):
                         print("Vente")
                         print("Prix de fermeture : ", PointEntree, "RSI: ", RSI, "MME: ", MME, "BBANDS: ", BBANDS, "WILLIAMS: ", df['WILLIAMS_R'].iloc[-2], "Time: ", Time)
                         print("")
+                        TailleBougieEntree = abs(df['Close'].iloc[-1] - df['Open'].iloc[-1])
+                        PointEntree = df['Close'].iloc[-1]
                         
                         
                     ########################################
@@ -163,12 +169,11 @@ def on_message(ws, message):
                 
         ### Les trades en cours : Achat et Vente ###
 
-        if len(df) > 15:
-            bougieEntree = BougieActuelle
-            TailleBougieEntree = df['Close'].iloc[-1] - df['Open'].iloc[-1]
-            PointEntree = Open
+        if len(df) > 15 and TailleBougieEntree != None and PointEntree != None:
+
             MedianBands = np.median(df['BBANDS'].iloc[-1])
             
+            print("")
             print("Taille de la bougie d'entrée : ", TailleBougieEntree)
             print("Point d'entrée : ", PointEntree)
             print("Médiane des bandes de Bollinger : ", MedianBands)
@@ -176,7 +181,9 @@ def on_message(ws, message):
             print("Close : ", Close)
             print("High : ", High)
             print("Low : ", Low)
-                                
+            print("")
+        
+                        
             if startTradeAchat :
                 with open("FinanceBot\Bot\signal.txt", "a") as file:   
                     # Stop Loss primaire
@@ -184,6 +191,8 @@ def on_message(ws, message):
                         file.write(f"Stop Loss, -{abs(TailleBougieEntree/2)}€")
                         print(f"Stop Loss, -{abs(TailleBougieEntree/2)}€")
                         startTradeAchat = False
+                        TailleBougieEntree = None
+                        PointEntree = None
                     
                     # Logique Breakeven, Trade Gratuit
                     elif High > PointEntree + 60 and breakeven == False and newStopLoss == False:
@@ -191,12 +200,15 @@ def on_message(ws, message):
                         print("Breakeven")
                         breakeven = True
                     elif Close > PointEntree + 60 and breakeven and newStopLoss == False:
-                        file.write("Entre breakeven et newStopLoss, attendre...")
+                        #file.write("Entre breakeven et newStopLoss, attendre...")
                         print("Entre breakeven et newStopLoss, attendre...")
                     elif Close < PointEntree + 60 and breakeven and newStopLoss == False:
                         file.write("Retour breakeven, +0€")
                         print("Retour breakeven, +0€")
                         startTradeAchat = False
+                        breakeven = False
+                        TailleBougieEntree = None
+                        PointEntree = None
                         
                     # Logique New Stop Loss, Trade partiel mais gaganant
                     elif High > MedianBands and breakeven and newStopLoss == False:
@@ -204,18 +216,26 @@ def on_message(ws, message):
                         print("Nouveau Stop Loss")
                         newStopLoss = True
                     elif Close > MedianBands and breakeven and newStopLoss:
-                        file.write("Entre newStopLoss et Cloture Trade complet, attendre...")
+                        #file.write("Entre newStopLoss et Cloture Trade complet, attendre...")
                         print("Entre newStopLoss et Cloture Trade complet, attendre...")
                     elif Close < MedianBands and newStopLoss:
                         file.write(f"Retour New Stop Loss, +{PointEntree - MedianBands}€")
                         print(f"Retour New Stop Loss, +{PointEntree - MedianBands}€")
                         startTradeAchat = False
+                        breakeven = False
+                        newStopLoss = False
+                        TailleBougieEntree = None
+                        PointEntree = None
                         
                     # Logique Cloture Trade complet
                     elif Close > df['BBANDS'].iloc[-1][1] and newStopLoss:
                         file.write(f"Cloture Trade complet +{PointEntree - df['BBANDS'].iloc[-1][1]}€")
                         print(f"Cloture Trade complet +{PointEntree - df['BBANDS'].iloc[-1][1]}€")
                         startTradeAchat = False
+                        breakeven = False
+                        newStopLoss = False
+                        TailleBougieEntree = None
+                        PointEntree = None
 
                     # Trade en cours
                     else:   
@@ -229,6 +249,8 @@ def on_message(ws, message):
                         file.write(f"Stop Loss, -{abs(TailleBougieEntree/2)}€")
                         print(f"Stop Loss, -{abs(TailleBougieEntree/2)}€")
                         startTradeVente = False
+                        TailleBougieEntree = None
+                        PointEntree = None
                     
                     # Logique Breakeven, Trade Gratuit
                     elif Low < PointEntree - 60 and breakeven == False and newStopLoss == False:
@@ -236,12 +258,15 @@ def on_message(ws, message):
                         print("Breakeven")
                         breakeven = True
                     elif Close < PointEntree - 60 and breakeven and newStopLoss == False:
-                        file.write("Entre breakeven et newStopLoss, attendre...")
+                        #file.write("Entre breakeven et newStopLoss, attendre...")
                         print("Entre breakeven et newStopLoss, attendre...")
                     elif Close > PointEntree - 60 and breakeven and newStopLoss == False:
                         file.write("Retour breakeven, +0€")
                         print("Retour breakeven, +0€")
                         startTradeVente = False
+                        breakeven = False
+                        TailleBougieEntree = None
+                        PointEntree = None
                         
                     # Logique New Stop Loss, Trade partiel mais gaganant
                     elif Low < MedianBands and breakeven and newStopLoss == False:
@@ -249,18 +274,26 @@ def on_message(ws, message):
                         print("Nouveau Stop Loss")
                         newStopLoss = True
                     elif Close < MedianBands and breakeven and newStopLoss:
-                        file.write("Entre newStopLoss et Cloture Trade complet, attendre...")
+                        #file.write("Entre newStopLoss et Cloture Trade complet, attendre...")
                         print("Entre newStopLoss et Cloture Trade complet, attendre...")
                     elif Close > MedianBands and newStopLoss:
                         file.write(f"Retour New Stop Loss, +{MedianBands - PointEntree}€")
                         print(f"Retour New Stop Loss, +{MedianBands - PointEntree}€")
                         startTradeVente = False
+                        breakeven = False
+                        newStopLoss = False
+                        TailleBougieEntree = None
+                        PointEntree = None
                         
                     # Logique Cloture Trade complet
                     elif Close < df['BBANDS'].iloc[-1][0] and newStopLoss:
                         file.write(f"Cloture Trade complet +{df['BBANDS'].iloc[-1][0] - PointEntree}€")
                         print(f"Cloture Trade complet +{df['BBANDS'].iloc[-1][0] - PointEntree}€")
-                        startTradeVente = False 
+                        startTradeVente = False
+                        breakeven = False
+                        newStopLoss = False
+                        TailleBougieEntree = None
+                        PointEntree = None
 
                     # Trade en cours
                     else:
@@ -301,7 +334,7 @@ def on_open(ws):
         "args": [
             {
                 "instType": "USDT-FUTURES",
-                "channel": "candle1m",
+                "channel": "candle15m",
                 "instId": "BTCUSDT"
             }
         ]
