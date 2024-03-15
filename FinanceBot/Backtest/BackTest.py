@@ -26,7 +26,7 @@ compteurBreakevenVente = 0
 compteurCompleteAchat = 0
 compteurCompleteVente = 0
 money = []
-IT = 1
+IT = 15
 
 
 for i in range(len(df['Close'])):

@@ -2,6 +2,7 @@ import websocket
 import json
 import pandas as pd
 import datetime
+from datetime import timezone
 from Indicateurs import *
 import numpy as np
 import requests
@@ -60,13 +61,16 @@ def on_message(ws, message):
         candle_data = data.get("data")[0]
 
         timestamp_ms = int(candle_data[0])
-        Time = datetime.datetime.utcfromtimestamp(timestamp_ms / 1000).strftime('%Y-%m-%d %H:%M:%S')
+        timestamp_ms = 1623215223000  # Example timestamp in milliseconds
+        time_utc = datetime.datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc)
+        Time = time_utc.strftime('%Y-%m-%d %H:%M:%S')
         Open, High, Low, Close, Volume = map(float, candle_data[1:6])
 
         DataFive.append([Time,Open, High, Low, Close, Volume])
 
         # Garder seulement les deux dernières entrées pour comparaison
         DataFive = DataFive[-2:]
+        
         try:
             BougieActuelle = DataFive[1]
             print(BougieActuelle)
@@ -316,10 +320,18 @@ def on_message(ws, message):
     
 
 def on_error(ws, error):
+    from datetime import datetime  # Ajoutez ceci en haut de votre fichier si ce n'est pas déjà fait
     print(error)
-    # if isinstance(error, Exception):
-    #     import traceback
-    #     traceback.print_exc()
+    with open("FinanceBot/Bot/logs.txt", "w") as fileDebug:
+        # Obtenez l'heure actuelle
+        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        if isinstance(error, Exception):
+            import traceback
+            # Écrire l'erreur avec l'horodatage
+            fileDebug.write(f"{current_time} - {traceback.format_exc()}")
+        else:
+            # Si l'erreur n'est pas une instance d'Exception, écrivez l'erreur directement avec un horodatage.
+            fileDebug.write(f"{current_time} - {error}\n")
 
 def on_close(ws, close_status_code, close_msg):
     print("### closed ###")
@@ -334,7 +346,7 @@ def on_open(ws):
         "args": [
             {
                 "instType": "USDT-FUTURES",
-                "channel": "candle15m",
+                "channel": "candle1m",
                 "instId": "BTCUSDT"
             }
         ]
