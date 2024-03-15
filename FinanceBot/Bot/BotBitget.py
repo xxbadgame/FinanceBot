@@ -127,7 +127,7 @@ def on_message(ws, message):
                             
                         startTradeAchat = True
                             
-                        with open("FinanceBot\Bot\signal.txt", "w") as file:
+                        with open("FinanceBot/Bot/signal.txt", "w") as file:
                             file.write(f"Achat : {Time}")
                         
                         print("")
@@ -151,7 +151,7 @@ def on_message(ws, message):
                     
                         startTradeVente = True
                         
-                        with open("FinanceBot\Bot\signal.txt", "w") as file:
+                        with open("FinanceBot/Bot/signal.txt", "w") as file:
                             file.write(f"Vente : {Time}")
                             
                         print("")
@@ -188,7 +188,7 @@ def on_message(ws, message):
         
                         
             if startTradeAchat :
-                with open("FinanceBot\Bot\signal.txt", "a") as file:   
+                with open("FinanceBot/Bot/signal.txt", "a") as file:   
                     # Stop Loss primaire
                     if PointEntree-abs(TailleBougieEntree/2) > Low and breakeven == False:
                         file.write(f"Stop Loss, -{abs(TailleBougieEntree/2)}€")
@@ -246,7 +246,7 @@ def on_message(ws, message):
                             
                             
             if startTradeVente : 
-                with open("FinanceBot\Bot\signal.txt", "a") as file:
+                with open("FinanceBot/Bot/signal.txt", "a") as file:
                     # Stop Loss primaire
                     if PointEntree+abs(TailleBougieEntree/2) < High and breakeven == False:
                         file.write(f"Stop Loss, -{abs(TailleBougieEntree/2)}€")
