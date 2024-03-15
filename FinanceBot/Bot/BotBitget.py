@@ -197,17 +197,17 @@ def on_message(ws, message):
                         TailleBougieEntree = None
                         PointEntree = None
                     
-                    # Logique Breakeven, Trade Gratuit
-                    elif High > PointEntree + 60 and breakeven == False and newStopLoss == False:
+                    # Logique Breakeven, Trade Gratuit +40€
+                    elif High > PointEntree + 100 and breakeven == False and newStopLoss == False:
                         file.write("Breakeven")
                         print("Breakeven")
                         breakeven = True
-                    elif Close > PointEntree + 60 and breakeven and newStopLoss == False:
+                    elif Close > PointEntree + 100 and breakeven and newStopLoss == False:
                         #file.write("Entre breakeven et newStopLoss, attendre...")
                         print("Entre breakeven et newStopLoss, attendre...")
-                    elif Close < PointEntree + 60 and breakeven and newStopLoss == False:
-                        file.write("Retour breakeven, +0€")
-                        print("Retour breakeven, +0€")
+                    elif Close < PointEntree + 100 and breakeven and newStopLoss == False:
+                        file.write("Retour breakeven, +40€")
+                        print("Retour breakeven, +40€")
                         startTradeAchat = False
                         breakeven = False
                         TailleBougieEntree = None
@@ -256,16 +256,16 @@ def on_message(ws, message):
                         PointEntree = None
                     
                     # Logique Breakeven, Trade Gratuit
-                    elif Low < PointEntree - 60 and breakeven == False and newStopLoss == False:
+                    elif Low < PointEntree - 100 and breakeven == False and newStopLoss == False:
                         file.write("Breakeven")
                         print("Breakeven")
                         breakeven = True
-                    elif Close < PointEntree - 60 and breakeven and newStopLoss == False:
+                    elif Close < PointEntree - 100 and breakeven and newStopLoss == False:
                         #file.write("Entre breakeven et newStopLoss, attendre...")
                         print("Entre breakeven et newStopLoss, attendre...")
-                    elif Close > PointEntree - 60 and breakeven and newStopLoss == False:
-                        file.write("Retour breakeven, +0€")
-                        print("Retour breakeven, +0€")
+                    elif Close > PointEntree - 100 and breakeven and newStopLoss == False:
+                        file.write("Retour breakeven, +40€")
+                        print("Retour breakeven, +40€")
                         startTradeVente = False
                         breakeven = False
                         TailleBougieEntree = None

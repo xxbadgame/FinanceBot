@@ -26,6 +26,7 @@ compteurBreakevenVente = 0
 compteurCompleteAchat = 0
 compteurCompleteVente = 0
 money = []
+moyenneHigh = []
 IT = 15
 
 
@@ -55,11 +56,15 @@ for i in range(len(df['Close'])):
                         print("Temps pour toucher la médiane (breakeven):", j*IT, "minutes")
                         compteurBreakevenAchat += 1
                         breakeven_reached = True
+                        print("Prix après ouverture :",df['High'].iloc[i+2]-df['Open'].iloc[i+2])
+                        moyenneHigh.append(df['High'].iloc[i+2]-df['Open'].iloc[i+2])
                         break
                     elif df['Close'].iloc[i+1+j] < df['Close'].iloc[i+1]-stopLoss:
                         print("Breakeven non atteint, stop loss")
                         print(-stopLoss)
                         money.append(-stopLoss)
+                        print("Prix après ouverture :",df['High'].iloc[i+2]-df['Open'].iloc[i+2])
+                        moyenneHigh.append(df['High'].iloc[i+2]-df['Open'].iloc[i+2])
                         break
                     
 
@@ -71,7 +76,6 @@ for i in range(len(df['Close'])):
                             print("Bande supérieure atteinte en:", k*IT, "minutes")
                             print("Résultat du trade : ",df['Close'].iloc[i+k]-df['Close'].iloc[i+1])
                             print("Prix d'ouverture : ",df['Close'][i+1])
-                            money.append(df['Close'].iloc[i+k]-df['Close'].iloc[i+1])
                             compteurCompleteAchat += 1
                             break
                         
@@ -107,11 +111,15 @@ for i in range(len(df['Close'])):
                         print("Temps pour toucher la médiane (breakeven):", j*IT, "minutes")
                         compteurBreakevenVente += 1
                         breakeven_reached = True
+                        print("Prix après ouverture :",df['High'].iloc[i+2]-df['Open'].iloc[i+2])
+                        moyenneHigh.append(df['High'].iloc[i+2]-df['Open'].iloc[i+2])
                         break
                     elif df['Close'].iloc[i+1+j] > df['Close'].iloc[i+1]+stopLoss:
                         print("Breakeven non atteint, stop loss")
                         print(-stopLoss)
                         money.append(-stopLoss)
+                        print("Prix après ouverture :",df['High'].iloc[i+2]-df['Open'].iloc[i+2])
+                        moyenneHigh.append(df['High'].iloc[i+2]-df['Open'].iloc[i+2])
                         break
                     
                     
@@ -131,7 +139,7 @@ for i in range(len(df['Close'])):
                             print("Résultat du trade : ",df['Close'].iloc[i+1]-ListeMedianBands[i+k])
                             print("Mediane de cloture : ",ListeMedianBands[i+k])
                             print("Retour à la médiane en:", k*IT, "minutes")
-                            print("Prix d'ouverture",df['Close'].iloc[i+1])
+                            print("Prix d'ouverture : ",df['Close'].iloc[i+1])
                             money.append(df['Close'].iloc[i+1]-ListeMedianBands[i+k])
                             break
                 
@@ -153,4 +161,5 @@ print("Nombre de trades complets ventes: ", compteurCompleteVente)
 print(money)
 result = sum(money) - 60*(compteurAchat+compteurVente)
 print("Résultat final: ", result)
+print("Moyenne des High: ", sum(moyenneHigh)/len(moyenneHigh))
 print("")
