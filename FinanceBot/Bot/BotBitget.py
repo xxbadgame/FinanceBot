@@ -61,7 +61,6 @@ def on_message(ws, message):
         candle_data = data.get("data")[0]
 
         timestamp_ms = int(candle_data[0])
-        timestamp_ms = 1623215223000  # Example timestamp in milliseconds
         time_utc = datetime.datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc)
         Time = time_utc.strftime('%Y-%m-%d %H:%M:%S')
         Open, High, Low, Close, Volume = map(float, candle_data[1:6])
