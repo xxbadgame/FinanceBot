@@ -12,7 +12,7 @@ import requests
 url = "https://api.bitget.com/api/v2/mix/market/history-candles"
 params = {
     "symbol": "BTCUSDT",
-    "granularity": "15m",  
+    "granularity": "1m",  
     "productType": "usdt-futures",
     "limit": 14,
 }
