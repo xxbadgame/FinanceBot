@@ -12,7 +12,7 @@ import requests
 url = "https://api.bitget.com/api/v2/mix/market/history-candles"
 params = {
     "symbol": "BTCUSDT",
-    "granularity": "1m",  
+    "granularity": "15m",  
     "productType": "usdt-futures",
     "limit": 14,
 }
@@ -321,7 +321,7 @@ def on_message(ws, message):
 def on_error(ws, error):
     from datetime import datetime  # Ajoutez ceci en haut de votre fichier si ce n'est pas déjà fait
     print(error)
-    with open("FinanceBot/Bot/logs.txt", "w") as fileDebug:
+    with open("FinanceBot/Bot/logs.txt", "a") as fileDebug:
         # Obtenez l'heure actuelle
         current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         if isinstance(error, Exception):
@@ -345,7 +345,7 @@ def on_open(ws):
         "args": [
             {
                 "instType": "USDT-FUTURES",
-                "channel": "candle1m",
+                "channel": "candle15m",
                 "instId": "BTCUSDT"
             }
         ]
