@@ -146,8 +146,7 @@ for i in range(len(df['Close'])):
             
         except IndexError:
             print("Actuellement en recherche d'un point d'entrée")
-        
-    
+            
             
 print("")
 print("Nombre de bougies: ", len(df['Close']))
@@ -159,7 +158,7 @@ print("Nombre de trades complets achats: ", compteurCompleteAchat)
 print("Nombre de trades complets ventes: ", compteurCompleteVente)
 
 print(money)
-result = sum(money) - 60*(compteurAchat+compteurVente)
+result = sum(money) - 200*(compteurAchat+compteurVente)
 print("Résultat final: ", result)
 print("Moyenne des High: ", sum(moyenneHigh)/len(moyenneHigh))
 print("")

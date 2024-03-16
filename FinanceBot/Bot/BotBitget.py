@@ -319,18 +319,8 @@ def on_message(ws, message):
     
 
 def on_error(ws, error):
-    from datetime import datetime  # Ajoutez ceci en haut de votre fichier si ce n'est pas déjà fait
     print(error)
-    with open("FinanceBot/Bot/logs.txt", "a") as fileDebug:
-        # Obtenez l'heure actuelle
-        current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        if isinstance(error, Exception):
-            import traceback
-            # Écrire l'erreur avec l'horodatage
-            fileDebug.write(f"{current_time} - {traceback.format_exc()}")
-        else:
-            # Si l'erreur n'est pas une instance d'Exception, écrivez l'erreur directement avec un horodatage.
-            fileDebug.write(f"{current_time} - {error}\n")
+
 
 def on_close(ws, close_status_code, close_msg):
     print("### closed ###")
@@ -359,7 +349,7 @@ def connect_websocket():
                                 on_error=on_error,
                                 on_close=on_close)
     ws.on_open = on_open
-    ws.run_forever(ping_interval=30)
+    ws.run_forever(ping_interval=25)
 
 if __name__ == "__main__":
     connect_websocket()
