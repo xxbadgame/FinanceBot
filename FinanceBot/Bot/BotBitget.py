@@ -1,11 +1,14 @@
 import websocket
+from websocket import WebSocketConnectionClosedException
 import json
 import pandas as pd
-import datetime
-from datetime import timezone
+from datetime import datetime, timezone
 from Indicateurs import *
 import numpy as np
 import requests
+import traceback
+import threading
+import time
 
 
 # Configuration initiale pour la requête API
@@ -53,6 +56,7 @@ newStopLoss = False
 TailleBougieEntree = None
 PointEntree = None
 last_added_minute = None
+compteurReconnexion = 0
 
 def on_message(ws, message):
     global df, DataFive, last_added_minute, startTradeAchat, startTradeVente, breakeven, newStopLoss, TailleBougieEntree, PointEntree
@@ -61,7 +65,7 @@ def on_message(ws, message):
         candle_data = data.get("data")[0]
 
         timestamp_ms = int(candle_data[0])
-        time_utc = datetime.datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc)
+        time_utc = datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc)
         Time = time_utc.strftime('%Y-%m-%d %H:%M:%S')
         Open, High, Low, Close, Volume = map(float, candle_data[1:6])
 
@@ -77,7 +81,7 @@ def on_message(ws, message):
             pass
         
 
-        current_candle_minute = datetime.datetime.strptime(Time, '%Y-%m-%d %H:%M:%S').minute
+        current_candle_minute = datetime.strptime(Time, '%Y-%m-%d %H:%M:%S').minute
 
         
         # Vérifier si la minute actuelle est différente de la dernière minute ajoutée
@@ -319,13 +323,16 @@ def on_message(ws, message):
     
 
 def on_error(ws, error):
-    print(error)
+    print(f"Erreur: {error}")
+    global erreur_connexion
+    erreur_connexion = True
 
 
 def on_close(ws, close_status_code, close_msg):
-    print("### closed ###")
-    # Attendre avant de se reconnecter
-    connect_websocket()
+    print("### Connexion Fermée ###")
+    global connexion_fermee
+    connexion_fermee = True
+    
 
 def on_open(ws):
     print("Connection opened")
@@ -343,13 +350,22 @@ def on_open(ws):
     ws.send(subscribe_message)
 
 def connect_websocket():
-    websocket.enableTrace(False)
+    global erreur_connexion, connexion_fermee
+    erreur_connexion = False
+    connexion_fermee = False
     ws = websocket.WebSocketApp("wss://ws.bitget.com/v2/ws/public",
                                 on_message=on_message,
                                 on_error=on_error,
-                                on_close=on_close)
-    ws.on_open = on_open
-    ws.run_forever(ping_interval=25)
+                                on_close=on_close,
+                                on_open=on_open)
+    ws.run_forever(ping_interval=5)
+    return erreur_connexion or connexion_fermee
 
 if __name__ == "__main__":
-    connect_websocket()
+    while True:
+        print("Connexion en cours...")
+        resultat = connect_websocket()
+        if resultat:
+            print("Tentative de reconnexion...")
+        else:
+            break
