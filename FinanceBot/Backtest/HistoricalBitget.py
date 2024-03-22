@@ -6,7 +6,7 @@ import time
 
 
 class HistoricalBitget:
-    def __init__(self, IT=15):
+    def __init__(self, IT=5):
         self.IT = IT
 
     def fetch_bitget_candles(self,target_bougies=1000):
@@ -53,3 +53,11 @@ class HistoricalBitget:
             final_df = pd.DataFrame()
 
         return final_df
+    
+if __name__ == "__main__":
+    historical = HistoricalBitget(IT=5)
+    df = historical.fetch_bitget_candles(target_bougies=1000)
+    print(df.head())
+    print(df.tail())
+    print(df.shape)
+    print(df.dtypes)

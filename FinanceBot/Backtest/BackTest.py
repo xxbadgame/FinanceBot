@@ -27,7 +27,10 @@ compteurCompleteAchat = 0
 compteurCompleteVente = 0
 money = []
 moyenneHigh = []
-IT = 15
+IT = 5
+
+breakeven = False
+gainSecure = False
 
 
 for i in range(len(df['Close'])):
@@ -48,10 +51,55 @@ for i in range(len(df['Close'])):
                 print("Achat")
                 compteurAchat += 1
                 print("Prix de fermeture : ", df["Close"].iloc[i], "RSI: ", ListeRSI[i], "MME: ", ListeMME[i], "BBANDS: ", ListeBBANDS[i], "Mediane BBANDS : ",ListeMedianBands[i], "WILLIAMS: ", ListeWILLIAMS[i], "Time: ", df.index[i])
-                ### combien de temps pour toucher le SMA ###
-                # Vérifie si le breakeven est atteint dans les 10 prochaines minutes
-                breakeven_reached = False
-                for j in range(len(df['Close']) - i):  # Vérifie les 30 prochaines minutes
+                
+                ### V2 Risk Managment Achat ###
+                
+                BougieAppelle = df['Close'].iloc[i]
+                BougieEntre = df['Close'].iloc[i+1]
+                Fibo238A = (df['Open'].iloc[i+1] - ListeBBANDS[i][0])*0.238 + ListeBBANDS[i][0]
+                Fibo382A = (df['Open'].iloc[i+1] - ListeBBANDS[i][0])*0.382 + ListeBBANDS[i][0]
+                
+                for j in range(len(df['Close']) - i):
+                        
+                        # Si la bougie d'entrer est plus grande que le 0.238 et qu'elle est plus grande que la bougie d'appelle alors on laisse courir le trade sans le stop à 0.238
+                        if df["Close"].iloc[i+1] - df["Open"].iloc[i+1] > (df['Open'].iloc[i+1] - ListeBBANDS[i][0])*0.238 and df["Close"].iloc[i+1] - df["Open"].iloc[i+1] > df["Close"].iloc[i] - df["Open"].iloc[i]:
+                            pass
+                        else:
+                            # Si la bougie monte au dessus de la mèche d'entrée
+                            if df["High"].iloc[i+j] >= df['High'].iloc[i+1] :
+                                print("Stop loss : ", df['High'].iloc[i+1])
+                                break
+                            # Si la bougie descend en dessous du 23.8% alors breakeven
+                            elif df["Low"].iloc[i+j] <= Fibo238A and breakeven == False:
+                                print("Fibo 23.8 atteint")
+                                breakeven = True
+                            # Si la bougie remonte
+                            elif df["Close"].iloc[i+j] >= Fibo238A and breakeven == True:
+                                # Fibo à + ou - 60 points
+                                if BougieEntre - Fibo238A > 60:
+                                    print("Breakeven atteint : +0€")
+                                    break
+                                else:
+                                    print("Perte Limitée : ", BougieEntre - Fibo238A - 60)
+                                    break
+                        # Si la bougie descend en dessous de la médiane alors gains sécurisé à 38.2%
+                        if df["Low"].iloc[i+j] <= ListeMedianBands[i+j] and gainSecure == False:
+                            print("Gains sécurisé sur Fibo 38.2")
+                            gainSecure = True
+                        elif df["Close"].iloc[i+j] >= Fibo382A and gainSecure == True:
+                            print("Gains sécurisé : ", BougieEntre - Fibo382A)
+                            break
+                        # Si la bougie touche la bande inférieure
+                        elif df["Close"].iloc[i+j] >= ListeBBANDS[i+j][0]:
+                            print("Bande supérieur atteinte")
+                            break
+                
+                
+                
+                ### V1 Risk Managment ###
+                
+                """ breakeven_reached = False
+                for j in range(len(df['Close']) - i):
                     if df['Close'].iloc[i+j] >= ListeMedianBands[i+j] - 50:  # Si atteint la médiane
                         print("Temps pour toucher la médiane (breakeven):", j*IT, "minutes")
                         compteurBreakevenAchat += 1
@@ -85,13 +133,13 @@ for i in range(len(df['Close'])):
                             print("Retour à la médiane en:", k*IT, "minutes")
                             print("Prix d'ouverture",df['Close'].iloc[i+1])
                             money.append(ListeMedianBands[i+k]-df['Close'].iloc[i+1])
-                            break
+                            break """
             
         except IndexError:
             print("Actuellement en recherche d'un point d'entrée")
             
      
-     ### Vente ###      
+    ### Vente ###      
             
     elif ListeRSI[i] > 70 and \
     ListeMME[i] < df['Close'].iloc[i] and \
@@ -103,9 +151,57 @@ for i in range(len(df['Close'])):
                 print("Vente")
                 compteurVente += 1
                 print("Prix de fermeture : ", df["Close"].iloc[i] ,"RSI: ", ListeRSI[i], "MME: ", ListeMME[i], "BBANDS: ", ListeBBANDS[i], "Mediane BBANDS : ",ListeMedianBands[i], "WILLIAMS: ", ListeWILLIAMS[i], "Time: ", df.index[i])
-                ### combien de temps pour toucher le SMA ###
-                # Vérifie si le breakeven est atteint dans les 10 prochaines minutes
-                breakeven_reached = False
+                
+                ### V2 Risk Managment Vente ###
+                
+                BougieAppelle = df['Close'].iloc[i]
+                BougieEntre = df['Close'].iloc[i+1]
+                Fibo238V = (ListeBBANDS[i][1] - df['Open'].iloc[i+1])*0.238 + df['Open'].iloc[i+1]
+                Fibo382V = (ListeBBANDS[i][1] - df['Open'].iloc[i+1])*0.382 + df['Open'].iloc[i+1]
+                
+                
+                
+                for j in range(len(df['Close']) - i):
+                    
+                    # Si la bougie d'entrer est plus grande que le 0.238 et qu'elle est plus grande que la bougie d'appelle alors on laisse courir le trade sans le stop à 0.238
+                    if df["Close"].iloc[i+1] - df["Open"].iloc[i+1] > (ListeBBANDS[i][1] - df['Open'].iloc[i+1])*0.238 and df["Close"].iloc[i+1] - df["Open"].iloc[i+1] > df["Close"].iloc[i] - df["Open"].iloc[i]:
+                        pass
+                    else:
+                        # Si la bougie descend en dessous de la mèche d'entrée
+                        if df["Low"].iloc[i+j] <= df['Low'].iloc[i+1] :
+                            print("Stop loss : ", df['Low'].iloc[i+1])
+                            break
+                    
+                        # Si la bougie monte au dessus du 23.8% alors breakeven
+                        elif df["High"].iloc[i+j] >= Fibo238V and breakeven == False:
+                            print("Fibo 23.8 atteint")
+                            breakeven = True
+                        # Si la bougie retombe
+                        elif df["Close"].iloc[i+j] <= Fibo238V and breakeven == True:
+                            # Fibo à + ou - 60 points
+                            if Fibo238V - BougieEntre > 60:
+                                print("Breakeven atteint : +0€")
+                                break
+                            else:
+                                print("Perte Limitée : ", Fibo238V - BougieEntre - 60)
+                                break
+                        
+                    # Si la bougie monte au dessus de la médiane alors gains sécurisé à 38.2%
+                    if df["High"].iloc[i+j] >= ListeMedianBands[i+j] and gainSecure == False:
+                        print("Gains sécurisé sur Fibo 38.2")
+                        gainSecure = True
+                    elif df["Close"].iloc[i+j] <= Fibo382V and gainSecure == True:
+                        print("Gains sécurisé : ", Fibo382V - BougieEntre)
+                        break
+                    
+                    # Si la bougie touche la bande supérieure
+                    elif df["Close"].iloc[i+j] <= ListeBBANDS[i+j][1]:
+                        print("Bande inférieur atteinte")
+                        break
+                        
+                
+                ### V1 Risk Managment ###
+                """ breakeven_reached = False
                 for j in range(len(df['Close']) - i):
                     if df['Close'].iloc[i+j] <= ListeMedianBands[i+j] + 50 :
                         print("Temps pour toucher la médiane (breakeven):", j*IT, "minutes")
@@ -141,7 +237,7 @@ for i in range(len(df['Close'])):
                             print("Retour à la médiane en:", k*IT, "minutes")
                             print("Prix d'ouverture : ",df['Close'].iloc[i+1])
                             money.append(df['Close'].iloc[i+1]-ListeMedianBands[i+k])
-                            break
+                            break """
                 
             
         except IndexError:
@@ -149,16 +245,15 @@ for i in range(len(df['Close'])):
             
             
 print("")
-print("Nombre de bougies: ", len(df['Close']))
-print("Nombre d'achats: ", compteurAchat)
-print("Nombre de ventes: ", compteurVente)
-print("Nombre de breakeven achats: ", compteurBreakevenAchat)
-print("Nombre de breakeven ventes: ", compteurBreakevenVente)
-print("Nombre de trades complets achats: ", compteurCompleteAchat)
-print("Nombre de trades complets ventes: ", compteurCompleteVente)
+# print("Nombre de bougies: ", len(df['Close']))
+# print("Nombre d'achats: ", compteurAchat)
+# print("Nombre de ventes: ", compteurVente)
+# print("Nombre de breakeven achats: ", compteurBreakevenAchat)
+# print("Nombre de breakeven ventes: ", compteurBreakevenVente)
+# print("Nombre de trades complets achats: ", compteurCompleteAchat)
+# print("Nombre de trades complets ventes: ", compteurCompleteVente)
 
 print(money)
-result = sum(money) - 200*(compteurAchat+compteurVente)
+result = sum(money) - 60*len(money)
 print("Résultat final: ", result)
-print("Moyenne des High: ", sum(moyenneHigh)/len(moyenneHigh))
 print("")
