@@ -9,7 +9,7 @@ class HistoricalBitget:
     def __init__(self, IT=5):
         self.IT = IT
 
-    def fetch_bitget_candles(self,target_bougies=1000):
+    def fetch_bitget_candles(self,target_bougies=10000):
         bougies_per_request = 200
         total_iterations = target_bougies // bougies_per_request
 
@@ -56,7 +56,7 @@ class HistoricalBitget:
     
 if __name__ == "__main__":
     historical = HistoricalBitget(IT=5)
-    df = historical.fetch_bitget_candles(target_bougies=1000)
+    df = historical.fetch_bitget_candles(target_bougies=10000)
     print(df.head())
     print(df.tail())
     print(df.shape)
