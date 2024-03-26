@@ -6,7 +6,7 @@ import time
 
 
 class HistoricalBitget:
-    def __init__(self, IT=5):
+    def __init__(self, IT=15):
         self.IT = IT
 
     def fetch_bitget_candles(self,target_bougies=10000):
