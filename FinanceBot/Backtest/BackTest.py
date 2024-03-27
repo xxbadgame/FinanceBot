@@ -28,6 +28,9 @@ compteurCompleteVente = 0
 money = []
 moyenneHigh = []
 
+secure = False
+Mediane = False
+
 for i in range(len(df['Close'])):
     
     ## On veut à chaque fois tester le breakeven (SMA), si ok alors laisser courir jusqu'au trade complet peut importe le temps que ça prend car dans le pire des 
@@ -80,11 +83,25 @@ for i in range(len(df['Close'])):
                         money.append(df['Close'].iloc[i+2+j]-df['Close'].iloc[i+1])
                         break
                     
-                    # 25% de BBANDS
+                    elif df['Close'].iloc[i+2]-df['Open'].iloc[i+2] <= BougieEntree and secure == False:
+                        print("Peu de puissance, Take profit", df['Close'].iloc[i+2]-df['Open'].iloc[i+2])
+                        money.append(df['Close'].iloc[i+2]-df['Open'].iloc[i+2])
+                        break
+                    
+                    elif df['Close'].iloc[i+2]-df['Open'].iloc[i+2] >= BougieEntree and secure == False:
+                        secure = True
+                        break
+                    
+                    elif df['Low'].iloc[i+3+j] <= df['Close'].iloc[i+1]+100 and secure == True:
+                        print("Secure", 100)
+                        money.append(100)
+                        secure = False
+                        break
                     
                     elif df['High'].iloc[i+j] >= ListeBBANDS[i][0]:
                         print("Bande supérieur atteinte : ",ListeBBANDS[i][0] - df['Close'].iloc[i+1])
                         money.append(ListeBBANDS[i][0] - df['Close'].iloc[i+1])
+                        sevcure = False
                         break
     
                         
@@ -129,11 +146,31 @@ for i in range(len(df['Close'])):
                         money.append(df['Close'].iloc[i+1]-df['Close'].iloc[i+2+j])
                         break
                     
+                    elif abs(df['Close'].iloc[i+2]-df['Open'].iloc[i+2]) <= BougieEntree:
+                        print("Peu de puissance, Take profit", df['Open'].iloc[i+2]-df['Close'].iloc[i+2])
+                        money.append(df['Open'].iloc[i+2]-df['Close'].iloc[i+2])
+                        break
+                    
+                    elif df['Close'].iloc[i+2]-df['Open'].iloc[i+2] <= BougieEntree:
+                        secure = True
+                        break
+                    
+                    elif df['Low'].ilox[i+3+j] <= ListeMedianBands[i] and Mediane == False:
+                        print("Mdiane Atteinte: ", df['Close'].iloc[i+1] - ListeMedianBands[i])
+                        Mediane = True
+                        break
+                    
+                    elif df['High'].iloc[i+3+j] >= df['Close'].iloc[i+1]-100 and secure == True:
+                        print("Secure", 100)
+                        money.append(100)
+                        secure = False
+                        break
+                        
+                    
                     elif df['Low'].iloc[i+j] <= ListeBBANDS[i][1]:
                         print("Bande inférieur atteinte : ",df['Close'].iloc[i+1] - ListeBBANDS[i][1])
                         money.append(df['Close'].iloc[i+1] - ListeBBANDS[i][1])
-                        Mediane = False
-                        Fibo382A = False
+                        secure = False
                         break
                     
                     
