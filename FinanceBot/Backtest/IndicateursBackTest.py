@@ -135,14 +135,22 @@ class IndicateursBackTest():
     
     #### Average True Range ####
     def ATR(self, highs, lows, closes, period=14):
-        # Calculer les valeurs de l'ATR
-        tr = []
+        # Calculer les True Ranges (TR)
+        tr = [0]  # Initialiser avec 0 pour la première valeur qui n'a pas de TR
         for i in range(1, len(closes)):
             high = highs[i]
             low = lows[i]
             close = closes[i-1]
             tr.append(max(high - low, abs(high - close), abs(low - close)))
-        
-        atr = np.mean(tr[-period:])
-        
+
+        # Calculer l'ATR comme une moyenne mobile des TR
+        atr = []
+        for i in range(len(tr)):
+            if i < period:
+                # Pas assez de données pour calculer une moyenne mobile complète
+                atr.append(np.mean(tr[:i+1]))
+            else:
+                # Calculer la moyenne mobile pour la période spécifiée
+                atr.append(np.mean(tr[i-period+1:i+1]))
+
         return atr

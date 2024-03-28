@@ -17,7 +17,7 @@ ListeBBANDS = indicateurs.BBANDS(df['Close'].to_list())
 ListeWILLIAMS = indicateurs.WILLIAMS(df['High'].to_list(), df['Low'].to_list(), df['Close'].to_list())
 ListeMedianBands = indicateurs.medianBBANDS(df['Close'].to_list())
 ListeVolume = df['Volume'].to_list()
-stopLoss = 0
+ListeATR = indicateurs.ATR(df['High'].to_list(), df['Low'].to_list(), df['Close'].to_list())
 
 compteurAchat = 0
 compteurVente = 0
@@ -29,7 +29,7 @@ money = []
 moyenneHigh = []
 
 secure = False
-Mediane = False
+mediane = False
 
 for i in range(len(df['Close'])):
     
@@ -38,21 +38,18 @@ for i in range(len(df['Close'])):
 
         
     ### Achat ###
-    
-    try:
-        BougieEntree = df['Close'].iloc[i+1] - df['Open'].iloc[i+1]
-        BougieAppelle = df['Close'].iloc[i] - df['Open'].iloc[i]
-        Fibo382Achat = df['Open'].iloc[i+1] + (ListeBBANDS[i][0] - df['Open'].iloc[i+1])*0.236
-        Fibo382Vente = df['Open'].iloc[i+1] - (df['Open'].iloc[i+1] - ListeBBANDS[i][1])*0.236
-    except IndexError:
-        print("Actuellement en recherche d'un point d'entrée")
 
     if ListeRSI[i] < 30 and \
     ListeMME[i] > df['Close'].iloc[i] and \
     ListeBBANDS[i][1] > df['Close'].iloc[i] and \
-    ListeWILLIAMS[i] < -70:
+    ListeWILLIAMS[i] < -70 and \
+    ListeATR[i] > 250:
         try:
-            if ListeWILLIAMS[i+1] > -70 and BougieEntree > 0 and BougieAppelle < 0 and abs(BougieEntree) > abs(BougieAppelle):
+            
+            BougieEntreeA = df['Close'].iloc[i+1] - df['Open'].iloc[i+1]
+            BougieAppelleA = df['Close'].iloc[i] - df['Open'].iloc[i]
+            
+            if ListeWILLIAMS[i+1] > -70 and BougieEntreeA > 0 and BougieAppelleA < 0 and abs(BougieEntreeA) > abs(BougieAppelleA):
                 print("")
                 print("Achat")
                 compteurAchat += 1
@@ -77,44 +74,56 @@ for i in range(len(df['Close'])):
                 
                 for j in range(len(df['Close']) - i):
                     
-                    # Stop Loss
+                    # Stop Loss début de trade
 
-                    if df['Close'].iloc[i+2] < (df['Close'].iloc[i+1]-abs(BougieEntree)*0.25) and secure == False:
-                        print("Stop Loss :", df['Close'].iloc[i+2]-df['Close'].iloc[i+1])
+                    if df['Close'].iloc[i+2+j] < (df['Close'].iloc[i+1]-abs(BougieEntreeA)*0):
+                        print("Stop Loss :", df['Close'].iloc[i+2+j]-df['Close'].iloc[i+1])
                         money.append(df['Close'].iloc[i+2+j]-df['Close'].iloc[i+1])
                         break
 
-                    # Take Profit si peu de puissance et positif
+                    # Si peu de puissance, Take profit
                     
-                    elif abs(df['Close'].iloc[i+2+j]-df['Open'].iloc[i+2+j]) <= BougieEntree and secure == False:
-                        if df['Close'].iloc[i+2]-df['Open'].iloc[i+2] > 0:
-                            print("Peu de puissance, Take profit", df['Close'].iloc[i+2]-df['Open'].iloc[i+2])
-                            money.append(df['Close'].iloc[i+2]-df['Open'].iloc[i+2])
-                            break
-
-                    # Bougie Post entrée supérieur à l'entrée
+                    elif abs(df['Close'].iloc[i+2]-df['Open'].iloc[i+2]) <= BougieEntreeA//2 and df['Close'].iloc[i+2]-df['Open'].iloc[i+2] >= 0:
+                        print("Peu de puissance, Take profit", df['Close'].iloc[i+2]-df['Open'].iloc[i+2])
+                        money.append(df['Close'].iloc[i+2]-df['Open'].iloc[i+2])
+                        break
                     
-                    elif abs(df['Close'].iloc[i+2]-df['Open'].iloc[i+2]) >= BougieEntree and secure == False:
+                    # Bougie post entrée
+                    
+                    elif abs(df['Close'].iloc[i+2]-df['Open'].iloc[i+2]) >= BougieEntreeA//2 and secure == False:
                         print("Secure")
                         secure = True
+                        
+                    # Bougie post médiane
+                    
+                    elif df['High'].iloc[i+2+j] >= ListeMedianBands[i] and secure == True and mediane == False:
+                        print("Passage Médiane")
+                        mediane = True
 
                     # Si la bougie retombe sur sécure
                     
-                    elif df['Low'].iloc[i+3+j] <= df['Close'].iloc[i+1]+100 and secure == True:
-                        print("Secure", 100)
+                    elif df['Low'].iloc[i+2+j] <= df['Close'].iloc[i+1]+100 and secure == True and mediane == False:
+                        print("Retour secure : ", 100)
                         money.append(100)
                         secure = False
                         break
-
-                    ### Mediane BBANDS atteinte
-                    ### Retombe sur la médiane
+                    
+                    # Si la bougie retombe sur médiane
+                    
+                    elif df['Low'].iloc[i+2+j] <= ListeMedianBands[i+2+j] and secure == True and mediane == True:
+                        print("Retour médiane : ",ListeMedianBands[i+2+j]-df['Close'].iloc[i+1])
+                        money.append(ListeMedianBands[i+2+j]-df['Close'].iloc[i+1])
+                        secure = False
+                        mediane = False
+                        break
 
                     # Trade complet si la bougie atteint la bande supérieur
                     
-                    elif df['High'].iloc[i+j] >= ListeBBANDS[i][0]:
-                        print("Bande supérieur atteinte : ",ListeBBANDS[i][0] - df['Close'].iloc[i+1])
-                        money.append(ListeBBANDS[i][0] - df['Close'].iloc[i+1])
+                    elif df['High'].iloc[i+2+j] >= ListeBBANDS[i+2+j][0] and secure == True and mediane == False:
+                        print("Bande supérieur atteinte : ",ListeBBANDS[i+2+j][0] - df['Close'].iloc[i+1])
+                        money.append(ListeBBANDS[i+2+j][0] - df['Close'].iloc[i+1])
                         secure = False
+                        mediane = False
                         break
     
                         
@@ -123,14 +132,20 @@ for i in range(len(df['Close'])):
             print("Actuellement en recherche d'un point d'entrée")
             
      
-    ### Vente ###      
+    ### Vente ###
+    
             
-    elif ListeRSI[i] > 70 and \
+    if ListeRSI[i] > 70 and \
     ListeMME[i] < df['Close'].iloc[i] and \
     ListeBBANDS[i][0] < df['Close'].iloc[i] and \
-    ListeWILLIAMS[i] > -20:
+    ListeWILLIAMS[i] > -20 and \
+    ListeATR[i] > 250:
         try:
-            if ListeWILLIAMS[i+1] < -20 and BougieEntree < 0 and BougieAppelle > 0 and abs(BougieEntree) > abs(BougieAppelle):
+            
+            BougieEntreeV= df['Close'].iloc[i+1] - df['Open'].iloc[i+1]
+            BougieAppelleV = df['Close'].iloc[i] - df['Open'].iloc[i]
+            
+            if ListeWILLIAMS[i+1] < -20 and BougieEntreeV < 0 and BougieAppelleV > 0 and abs(BougieEntreeV) > abs(BougieAppelleV):
                 print("")
                 print("Vente")
                 compteurVente += 1
@@ -154,51 +169,60 @@ for i in range(len(df['Close'])):
                 
                 for j in range(len(df['Close']) - i):
 
-                    # Stop Loss
-                    
-                    if df['Close'].iloc[i+2] > (df['Close'].iloc[i+1]+abs(BougieEntree)*0.25) and secure == False:
+                    # Stop Loss début de trade
+
+                    if df['Close'].iloc[i+2+j] > (df['Close'].iloc[i+1]+abs(BougieEntreeV)*0):
                         print("Stop Loss :", df['Close'].iloc[i+1]-df['Close'].iloc[i+2+j])
                         money.append(df['Close'].iloc[i+1]-df['Close'].iloc[i+2+j])
                         break
 
-                    # Take Profit si peu de puissance
+                    # Si peu de puissance, Take profit
                     
-                    elif abs(df['Close'].iloc[i+2]-df['Open'].iloc[i+2]) <= BougieEntree and secure == False:
-                        if df['Close'].iloc[i+2]-df['Open'].iloc[i+2] > 0:
-                            print("Peu de puissance, Take profit", df['Open'].iloc[i+2]-df['Close'].iloc[i+2])
-                            money.append(df['Open'].iloc[i+2]-df['Close'].iloc[i+2])
-                            break
-
-                    # Bougie Post entrée supérieur à l'entrée
+                    elif abs(df['Close'].iloc[i+2]-df['Open'].iloc[i+2]) <= abs(BougieEntreeV)//2 and df['Close'].iloc[i+2]-df['Open'].iloc[i+2] <= 0:
+                        print("Peu de puissance, Take profit", df['Open'].iloc[i+2]-df['Close'].iloc[i+2])
+                        money.append(df['Open'].iloc[i+2]-df['Close'].iloc[i+2])
+                        break
                     
-                    elif abs(df['Close'].iloc[i+2]-df['Open'].iloc[i+2]) >= BougieEntree and secure == False:
+                    # Bougie post entrée
+                    
+                    elif abs(df['Close'].iloc[i+2]-df['Open'].iloc[i+2]) >= abs(BougieEntreeV)//2 and secure == False:
                         print("Secure")
                         secure = True
+                        
+                    # Bougie post médiane
+                    
+                    elif df['Low'].iloc[i+2+j] <= ListeMedianBands[i] and secure == True and mediane == False:
+                        print("Passage Médiane")
+                        mediane = True
+                        
 
                     # Si la bougie retombe sur sécure
                     
-                    elif df['High'].iloc[i+3+j] >= df['Close'].iloc[i+1]+100 and secure == True:
-                        print("Secure", 100)
+                    elif df['High'].iloc[i+2+j] >= df['Close'].iloc[i+1]-100 and secure == True and mediane == False:
+                        print("Retour secure : ", 100)
                         money.append(100)
                         secure = False
                         break
-
-                    ### Mediane BBANDS atteinte
-                    ### Retombe sur la médiane
+                    
+                    # Si la bougie retombe sur médiane
+                    
+                    elif df['High'].iloc[i+2+j] >= ListeMedianBands[i+2+j] and secure == True and mediane == True:
+                        print("Retour médiane : ",df['Close'].iloc[i+1]-ListeMedianBands[i+2+j])
+                        money.append(df['Close'].iloc[i+1]-ListeMedianBands[i+2+j])
+                        secure = False
+                        mediane = False
+                        break
 
                     # Trade complet si la bougie atteint la bande inférieur
                     
-                    elif df['Low'].iloc[i+j] <= ListeBBANDS[i][1]:
-                        print("Bande inférieur atteinte : ",df['Close'].iloc[i+1] - ListeBBANDS[i][1])
-                        money.append(df['Close'].iloc[i+1] - ListeBBANDS[i][1])
+                    elif df['Low'].iloc[i+2+j] <= ListeBBANDS[i+2+j][1] and secure == True and mediane == True:
+                        print("Bande inférieur atteinte : ",df['Close'].iloc[i+1]-ListeBBANDS[i+2+j][1])
+                        money.append(df['Close'].iloc[i+1]-ListeBBANDS[i+2+j][1])
                         secure = False
+                        mediane = False
                         break
                     
-                    
-                
-                
-                    
-                    
+                          
         except IndexError:
             print("Actuellement en recherche d'un point d'entrée")
             
