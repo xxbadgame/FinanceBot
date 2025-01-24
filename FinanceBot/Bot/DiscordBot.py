@@ -24,7 +24,7 @@ async def infoSociete(ctx):
     await ctx.send(message)
     
     
-channel_id = 1213988144702292058
+channel_id =
 
 @tasks.loop(seconds=1)
 async def check_signal():
